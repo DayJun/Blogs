@@ -6,15 +6,15 @@
 
 按 `shift+F12` 搜索字符串，找到了带有 `flag{%.26s}` 字样的字符串。根据交叉引用找到该字符串被引用的代码段
 
-![](https://imgchr.com/i/VnuELT)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/0.PNG)
 
 发现 `test eax,eax` 这句代码上方的代码IDA识别不出来。按下 `[space]` ，查看上方的代码是什么样的
 
-![](https://imgchr.com/i/VnukQ0)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/1.PNG)
 
 我们发现它调用了这个函数，跟进去看一下
 
-![](https://imgchr.com/i/VnuAyV)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/2.PNG)
 
 发现端倪了，这里使用了[SMC](https://baike.baidu.com/item/%E8%87%AA%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81/1218702?fr=aladdin)技术。那么返回，查看上方的函数调用
 
@@ -22,7 +22,7 @@
 
 在 `sub_401610` 中看到这两个调用
 
-![](https://imgchr.com/i/VnuZeU)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/3.PNG)
 
 `GetCurrentProcess` 的作用是获取当前进程的一个伪句柄  
 `WriteProcessMemory` 的作用就是向进程的指定偏移写入内容
@@ -33,7 +33,7 @@
 
 在 `401C2C` 处下断点，根据 `ECX` 的值得到了输入在内存中的位置，同时得知输入将会在 `sub_401610` 被使用
 
-![](https://imgchr.com/i/Vnuizq)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/4.PNG)
 
 跟进函数一步步查看，就得到了函数的逻辑：
 
@@ -47,11 +47,11 @@
 
 5. 在 `403040` 有一个表，表中有总共 128 * 4 字节的数据，将其看作数组A，共四项，每项128字节
 
-![](https://imgchr.com/i/VnuewF)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/5.PNG)
 
 6. `405018` 有一个表，该表有总共 128 * 6 字节的数据，将其看作数组B，共六项，每项128字节，其中每项也是一个数组，该数组每项32字节
 
-![](https://imgchr.com/i/VnuuFJ)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/6.PNG)
 
 7. 进行如下运算
 
@@ -77,7 +77,7 @@
 
 10. 将运算完成的数据与 `404148` 的数据进行比对，如果全部比对成功，就开始将数据写入 `sub_4018A0` 的指定位置
 
-![](https://imgchr.com/i/VnuKY9)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/7.PNG)
 
 ### 得到前十位
 
@@ -128,7 +128,7 @@
 
 `sub_4018A0` 是3DES解密的一个过程，找到key以后直接解密即可
 
-![](https://imgchr.com/i/Vnumo4)
+![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/8.PNG)
 
 上图从第9个字节开始即为key
 
