@@ -16,7 +16,7 @@
 
 ![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/2.PNG)
 
-发现端倪了，这里使用了[SMC][0]技术。那么返回，查看上方的函数调用
+发现端倪了，这里使用了[SMC](https://baike.baidu.com/item/%E8%87%AA%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81/1218702?fr=aladdin)技术。那么返回，查看上方的函数调用
 
 经过分析，得知 `sub_401CE0` 的作用是获取输入；`sub_401610` 的作用就是对函数 `sub_4018A0` 进行解密
 
@@ -45,23 +45,23 @@
 
 4. 将转换后的数字拓展到128位，比如 0x90 拓展为 0x90909090909090909090909090909090，将其看作Num_2
 
-5. 在 `403040` 有一个表，表中有总共 $128 * 4$ 字节的数据，将其看作数组A，共四项，每项128字节
+5. 在 `403040` 有一个表，表中有总共 128 * 4 字节的数据，将其看作数组A，共四项，每项128字节
 
 ![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/5.PNG)
 
-6. `405018` 有一个表，该表有总共 $128 * 6$ 字节的数据，将其看作数组B，共六项，每项128字节，其中每项也是一个数组，该数组每项32字节
+6. `405018` 有一个表，该表有总共 128 * 6 字节的数据，将其看作数组B，共六项，每项128字节，其中每项也是一个数组，该数组每项32字节
 
 ![](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Pics/6.PNG)
 
 7. 进行如下运算
 
-    * $B[0] = ( B[0] + Num_2 ) ^ ( A[0] + Num_1 )$  
+    * B[0] = ( B[0] + Num_2 ) ^ ( A[0] + Num_1 )
 
-    * $B[1] = ( B[1] + Num_2 ) ^ ( A[0] + A[1] + Num_1 )$  
+    * B[1] = ( B[1] + Num_2 ) ^ ( A[0] + A[1] + Num_1 )
 
-    * $B[2] = ( B[2] + Num_2 ) ^ ( A[0] + A[2] + Num_1 )$  
+    * B[2] = ( B[2] + Num_2 ) ^ ( A[0] + A[2] + Num_1 )
 
-    * $B[3] = ( B[3] + Num_2 ) ^ ( A[0] + A[3] + Num_1 )$  
+    * B[3] = ( B[3] + Num_2 ) ^ ( A[0] + A[3] + Num_1 )  
 
 8. 将输入的第 9、10 位拓展到32位，就此例，0x90 拓展为 0x90909090，将其看作 Num_3  
 
@@ -83,7 +83,7 @@
 
 使用Z3来解决这个方程，就实际而言，只需要解出第7步中第一个方程即可得到结果
 
-由于Python的Z3模块我不会使用，所以我学习了一下Z3，用Z3官方教程页面的在线IDE [rise4fun][1] 进行了求解
+由于Python的Z3模块我不会使用，所以我学习了一下Z3，用Z3官方教程页面的在线IDE [rise4fun](https://rise4fun.com/Z3/tutorial/guide) 进行了求解
 
 代码如下  
 ```
@@ -132,12 +132,8 @@
 
 上图从第9个字节开始即为key
 
-[解密脚本][2]
+[解密脚本](https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Src/3DESdecrypt.py)
 
 ### 总结
 
-这题我没做出来，前面SMC部分还好说，后面这个3DES直接就不认识，也因为见识不广吃了大亏。不过还好，下次就认识了
-
-[0]: https://baike.baidu.com/item/%E8%87%AA%E4%BF%AE%E6%94%B9%E4%BB%A3%E7%A0%81/1218702?fr=aladdin 
-[1]: https://rise4fun.com/Z3/tutorial/guide
-[2]: https://github.com/DayJun/Blogs/blob/master/2019-5-28-rctf-JustRe-writeup/Src/3DESdecrypt.py
+这题我没直接做出来，前面SMC部分还好说，后面这个3DES直接就不认识，也因为见识不广吃了大亏。不过还好，下次就认识了
